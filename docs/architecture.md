@@ -1,5 +1,7 @@
 # Arquitetura — Assistente RAG
 
+---
+
 ## 1. Visão Geral
 
 O projeto implementa um assistente RAG simples para consulta a um único documento PDF.
@@ -21,6 +23,7 @@ O fluxo principal consiste em:
 ## 2. Diagrama de Arquitetura
 
 ```mermaid
+
 flowchart TD
     A[Usuário] --> B[Interface Gradio]
     B --> C[Função de Pergunta]
@@ -38,40 +41,40 @@ flowchart TD
     K --> L[Resposta Final]
     L --> B
 
+```
 
 ---
 
 ## 3. Componentes
-Interface (Gradio)
 
+### Interface (Gradio)
 Recebe a pergunta do usuário e exibe a resposta.
 
-PDF Loader
-
+### PDF Loader
 Carrega o PDF e extrai o texto.
 
-Text Splitter
-
+### Text Splitter
 Divide o texto em chunks menores.
 
-Embeddings (OpenAI)
-
+### Embeddings (OpenAI)
 Transforma texto em vetores.
 
-FAISS
-
+### FAISS
 Armazena os vetores e permite busca semântica.
 
-Retriever
-
+### Retriever
 Busca os trechos mais relevantes.
 
-LLM (OpenAI)
-
+### LLM (OpenAI)
 Gera a resposta com base no contexto.
 
-4. Fluxo de Execução
-4.1 Indexação (pré-processamento)
+---
+
+## 4. Fluxo de Execução
+
+### 4.1 Indexação (pré-processamento)
+
+```mermaid
 
 sequenceDiagram
     participant PDF as PDF Local
@@ -85,7 +88,13 @@ sequenceDiagram
     Splitter->>Embeddings: Gerar embeddings
     Embeddings->>FAISS: Armazenar vetores
 
-4.2 Pergunta e Resposta
+```
+
+---
+
+### 4.2 Pergunta e Resposta
+
+```mermaid
 
 sequenceDiagram
     participant User as Usuário
@@ -101,8 +110,12 @@ sequenceDiagram
     Retriever->>LLM: Pergunta + contexto
     LLM-->>UI: Retorna resposta
     UI-->>User: Exibe resposta
-    
-5. Estrutura de Módulos
+
+```
+
+---
+
+## 5. Estrutura de Módulos
 
 app/
 ├── main.py
@@ -111,22 +124,29 @@ app/
 ├── rag_pipeline.py
 └── __init__.py
 
-6. Decisões Técnicas
-Decisão	Justificativa
-FAISS local	Simplicidade e execução offline
-Gradio	Interface rápida para MVP
-OpenAI Embeddings	Integração direta com LangChain
-PDF fixo	Escopo controlado
-Sem memória	Evita complexidade
-Sem banco relacional	Não necessário para o MVP
-7. Limites da Arquitetura
+---
+
+## 6. Decisões Técnicas
+
+| Decisão | Justificativa |
+|--------|--------------|
+| FAISS local | Simplicidade e execução offline |
+| Gradio | Interface rápida para MVP |
+| OpenAI Embeddings | Integração direta com LangChain |
+| PDF fixo | Escopo controlado |
+| Sem memória conversacional | Evita complexidade |
+| Sem banco relacional | Não necessário para o MVP |
+
+---
+
+## 7. Limites da Arquitetura
 
 Não contempla:
 
-múltiplos documentos
-upload de arquivos
-autenticação
-histórico de conversa
-deploy em nuvem
-reranking
-busca híbrida
+- múltiplos documentos
+- upload de arquivos
+- autenticação
+- histórico de conversa
+- deploy em nuvem
+- reranking
+- busca híbrida

@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
 
+from app import config
 from app import pdf_loader
 
 
@@ -95,4 +96,4 @@ def test_load_pdf_chunks_from_project_pdf() -> None:
 
     assert len(chunks) >= 3
     assert all(chunk.strip() for chunk in chunks[:3])
-    assert all(len(chunk) <= pdf_loader.CHUNK_SIZE for chunk in chunks[:3])
+    assert all(len(chunk) <= config.CHUNK_SIZE for chunk in chunks[:3])

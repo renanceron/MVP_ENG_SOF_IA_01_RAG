@@ -2,10 +2,7 @@ from pathlib import Path
 
 from pypdf import PdfReader
 
-
-DEFAULT_PDF_PATH = Path("data/faq_capes.pdf")
-CHUNK_SIZE = 1200
-CHUNK_OVERLAP = 200
+from app import config
 
 
 def validate_pdf_path(pdf_path: str | Path) -> Path:
@@ -43,9 +40,12 @@ def normalize_text(text: str) -> str:
 
 def split_text_into_chunks(
     text: str,
-    chunk_size: int = CHUNK_SIZE,
-    chunk_overlap: int = CHUNK_OVERLAP,
+    chunk_size: int | None = None,
+    chunk_overlap: int | None = None,
 ) -> list[str]:
+    chunk_size = chunk_size if chunk_size is not None else config.CHUNK_SIZE
+    chunk_overlap = chunk_overlap if chunk_overlap is not None else config.CHUNK_OVERLAP
+
     if not text:
         raise ValueError("Text cannot be empty")
 
@@ -73,6 +73,6 @@ def split_text_into_chunks(
     return chunks
 
 
-def load_pdf_chunks(pdf_path: str | Path = DEFAULT_PDF_PATH) -> list[str]:
-    text = extract_text_from_pdf(pdf_path)
+def load_pdf_chunks(pdf_path: str | Path | None = None) -> list[str]:
+    text = extract_text_from_pdf(pdf_path or config.PDF_PATH)
     return split_text_into_chunks(text)

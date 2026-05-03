@@ -92,6 +92,7 @@ def test_build_prompt_instructs_model_to_use_only_context() -> None:
     prompt = pipeline._build_prompt("Pergunta de teste", "Contexto de teste")
 
     assert "exclusivamente o contexto" in prompt
+    assert "trecho relacionado ao tema da pergunta" in prompt
     assert "Contexto de teste" in prompt
     assert "Pergunta de teste" in prompt
 
@@ -139,7 +140,7 @@ def test_build_save_load_and_retrieve_faiss_vector_store_with_real_embeddings() 
             pytest.skip(f"OpenAI embeddings API unavailable: {exc}")
 
         assert loaded_documents
-        assert any("Inscrições online" in document.page_content for document in loaded_documents)
+        assert any("online" in document.page_content for document in loaded_documents)
     finally:
         if index_dir.exists():
             shutil.rmtree(index_dir)

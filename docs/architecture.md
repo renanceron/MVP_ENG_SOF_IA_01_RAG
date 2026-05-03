@@ -1,152 +1,104 @@
-# Arquitetura — Assistente RAG
+# Arquitetura - Assistente RAG
 
----
+## Visao Geral
 
-## 1. Visão Geral
+O projeto implementa um Assistente RAG simples para consulta a um unico documento PDF local.
 
-O projeto implementa um assistente RAG simples para consulta a um único documento PDF.
+Fluxo principal:
 
-O fluxo principal consiste em:
+1. `pdf_loader.py` carrega o PDF.
+2. O texto e extraido com `pypdf`.
+3. O texto e dividido em chunks semanticos por blocos de pergunta e resposta.
+4. `OpenAIEmbeddings` gera vetores.
+5. FAISS armazena os vetores localmente.
+6. O retriever busca os trechos mais relevantes.
+7. `ChatOpenAI` gera a resposta com base no contexto recuperado.
+8. Gradio exibe pergunta e resposta.
 
-1. Carregar o PDF local
-2. Extrair o texto
-3. Dividir o texto em chunks
-4. Gerar embeddings
-5. Armazenar os vetores em FAISS
-6. Receber pergunta do usuário
-7. Buscar trechos relevantes
-8. Gerar resposta com base no contexto recuperado
-9. Exibir resposta na interface Gradio
+## Componentes
 
----
+### app/config.py
 
-## 2. Diagrama de Arquitetura
+Centraliza configuracoes do MVP:
+
+- chave OpenAI via `.env`;
+- modelo LLM;
+- modelo de embeddings;
+- caminho do PDF;
+- caminho do indice FAISS;
+- `TOP_K`;
+- tamanho e overlap dos chunks;
+- temperatura do LLM.
+
+### app/pdf_loader.py
+
+Responsavel por:
+
+- validar caminho do PDF;
+- extrair texto;
+- normalizar texto;
+- identificar cursores de perguntas numeradas;
+- gerar blocos pergunta/resposta;
+- gerar chunks semanticos.
+
+Nao contem OpenAI, FAISS ou Gradio.
+
+### app/rag_pipeline.py
+
+Responsavel por:
+
+- criar embeddings;
+- criar FAISS local;
+- salvar e carregar indice FAISS;
+- recuperar contexto;
+- montar prompt;
+- consultar LLM;
+- expor `RAGPipeline.ask(question: str) -> str`.
+
+### app/main.py
+
+Interface Gradio simples:
+
+- um campo para pergunta;
+- um campo para resposta;
+- integracao com `RAGPipeline`.
+
+## Diagrama
 
 ```mermaid
-
 flowchart TD
-    A[Usuário] --> B[Interface Gradio]
-    B --> C[Função de Pergunta]
-    C --> D[Retriever RAG]
-
-    E[PDF Local] --> F[PDF Loader]
-    F --> G[Text Splitter]
-    G --> H[OpenAI Embeddings]
-    H --> I[FAISS Vector Store]
-
-    I --> D
-    D --> J[Contexto Recuperado]
-    J --> K[LLM OpenAI]
-    C --> K
-    K --> L[Resposta Final]
-    L --> B
-
+    A[PDF local] --> B[pdf_loader.py]
+    B --> C[Chunks semanticos]
+    C --> D[OpenAI Embeddings]
+    D --> E[FAISS local]
+    F[Usuario] --> G[Gradio]
+    G --> H[RAGPipeline.ask]
+    H --> E
+    E --> I[Contexto recuperado]
+    I --> J[ChatOpenAI]
+    J --> G
 ```
 
----
+## Decisoes Tecnicas
 
-## 3. Componentes
+| Decisao | Justificativa |
+|---|---|
+| PDF unico local | Mantem escopo controlado |
+| Chunking por pergunta/resposta | Preserva contexto semantico do FAQ |
+| FAISS local | Simples e adequado ao MVP |
+| OpenAI Embeddings | Compatibilidade direta com LangChain |
+| Gradio | Interface simples para validacao |
+| Sem memoria | Evita complexidade fora do MVP |
 
-### Interface (Gradio)
-Recebe a pergunta do usuário e exibe a resposta.
+## Limites
 
-### PDF Loader
-Carrega o PDF e extrai o texto.
+Nao contempla:
 
-### Text Splitter
-Divide o texto em chunks menores.
-
-### Embeddings (OpenAI)
-Transforma texto em vetores.
-
-### FAISS
-Armazena os vetores e permite busca semântica.
-
-### Retriever
-Busca os trechos mais relevantes.
-
-### LLM (OpenAI)
-Gera a resposta com base no contexto.
-
----
-
-## 4. Fluxo de Execução
-
-### 4.1 Indexação (pré-processamento)
-
-```mermaid
-
-sequenceDiagram
-    participant PDF as PDF Local
-    participant Loader as PDF Loader
-    participant Splitter as Text Splitter
-    participant Embeddings as OpenAI Embeddings
-    participant FAISS as FAISS
-
-    PDF->>Loader: Carregar documento
-    Loader->>Splitter: Extrair texto
-    Splitter->>Embeddings: Gerar embeddings
-    Embeddings->>FAISS: Armazenar vetores
-
-```
-
----
-
-### 4.2 Pergunta e Resposta
-
-```mermaid
-
-sequenceDiagram
-    participant User as Usuário
-    participant UI as Gradio
-    participant Retriever as Retriever
-    participant FAISS as FAISS
-    participant LLM as OpenAI
-
-    User->>UI: Envia pergunta
-    UI->>Retriever: Encaminha pergunta
-    Retriever->>FAISS: Busca contexto
-    FAISS-->>Retriever: Retorna trechos
-    Retriever->>LLM: Pergunta + contexto
-    LLM-->>UI: Retorna resposta
-    UI-->>User: Exibe resposta
-
-```
-
----
-
-## 5. Estrutura de Módulos
-
-app/
-├── main.py
-├── config.py
-├── pdf_loader.py
-├── rag_pipeline.py
-└── __init__.py
-
----
-
-## 6. Decisões Técnicas
-
-| Decisão | Justificativa |
-|--------|--------------|
-| FAISS local | Simplicidade e execução offline |
-| Gradio | Interface rápida para MVP |
-| OpenAI Embeddings | Integração direta com LangChain |
-| PDF fixo | Escopo controlado |
-| Sem memória conversacional | Evita complexidade |
-| Sem banco relacional | Não necessário para o MVP |
-
----
-
-## 7. Limites da Arquitetura
-
-Não contempla:
-
-- múltiplos documentos
-- upload de arquivos
-- autenticação
-- histórico de conversa
-- deploy em nuvem
-- reranking
-- busca híbrida
+- multiplos documentos;
+- upload;
+- autenticacao;
+- historico de conversa;
+- banco relacional;
+- deploy em nuvem;
+- reranking;
+- busca hibrida.

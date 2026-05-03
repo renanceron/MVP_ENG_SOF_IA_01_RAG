@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 from langchain.schema import Document
@@ -9,10 +10,17 @@ from app.pdf_loader import load_pdf_chunks
 
 
 NO_CONTEXT_MESSAGE = "Nao encontrei informacao suficiente no documento para responder."
-FAISS_INDEX_DIR = Path("faiss_index")
+FAISS_INDEX_DIR = config.FAISS_INDEX_DIR
+logger = logging.getLogger(__name__)
+
+
+def validate_openai_api_key() -> None:
+    if not config.OPENAI_API_KEY or config.OPENAI_API_KEY.startswith("insira_"):
+        raise RuntimeError("OPENAI_API_KEY is not configured")
 
 
 def create_embeddings() -> OpenAIEmbeddings:
+    validate_openai_api_key()
     return OpenAIEmbeddings(
         model=config.EMBEDDING_MODEL,
         api_key=config.OPENAI_API_KEY,
@@ -33,32 +41,39 @@ def build_vector_store(chunks: list[str], index_dir: Path = FAISS_INDEX_DIR) -> 
         raise ValueError("No valid chunks available for indexing")
 
     embeddings = create_embeddings()
+    logger.info("Creating FAISS index with %s documents", len(documents))
     vector_store = FAISS.from_documents(documents, embeddings)
     vector_store.save_local(str(index_dir))
+    logger.info("FAISS index saved at %s", index_dir)
 
     return vector_store
 
 
 def load_vector_store(index_dir: Path = FAISS_INDEX_DIR) -> FAISS | None:
     if not index_dir.exists():
+        logger.info("FAISS index not found at %s", index_dir)
         return None
 
     try:
-        return FAISS.load_local(
+        vector_store = FAISS.load_local(
             str(index_dir),
             create_embeddings(),
             allow_dangerous_deserialization=True,
         )
+        logger.info("FAISS index loaded from %s", index_dir)
+        return vector_store
     except Exception:
+        logger.warning("Failed to load FAISS index from %s", index_dir)
         return None
 
 
 class RAGPipeline:
     def __init__(self) -> None:
+        validate_openai_api_key()
         self.llm = ChatOpenAI(
             model=config.MODEL_NAME,
             api_key=config.OPENAI_API_KEY,
-            temperature=0,
+            temperature=config.TEMPERATURE,
         )
         self.vector_store = self._get_or_create_vector_store()
 
@@ -96,9 +111,12 @@ class RAGPipeline:
 
     def _build_prompt(self, question: str, context: str) -> str:
         return (
-            "Responda a pergunta usando exclusivamente o contexto abaixo.\n"
-            "Se o contexto nao contiver informacao suficiente, responda: "
-            f"'{NO_CONTEXT_MESSAGE}'\n\n"
+            "Voce e um assistente RAG que responde usando exclusivamente o contexto abaixo.\n"
+            "Se existir no contexto um trecho relacionado ao tema da pergunta, responda com "
+            "base nesse trecho, mesmo que a formulacao nao seja identica.\n"
+            "Quando a resposta depender de condicao, informe a condicao de forma objetiva.\n"
+            "Se o contexto realmente nao trouxer informacao relacionada, responda exatamente: "
+            f"{NO_CONTEXT_MESSAGE}\n\n"
             f"Contexto:\n{context}\n\n"
             f"Pergunta:\n{question}\n\n"
             "Resposta:"

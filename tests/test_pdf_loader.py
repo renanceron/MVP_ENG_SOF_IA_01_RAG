@@ -39,6 +39,40 @@ def test_split_text_into_chunks_uses_overlap() -> None:
     assert chunks == ["abcdefghij", "ijklmnopqr", "qrstuvwxyz", "yz"]
 
 
+def test_split_text_into_question_answer_blocks_preserves_answers() -> None:
+    text = (
+        "FAQ 1. Primeira pergunta? Primeira resposta. "
+        "2. Segunda pergunta? Segunda resposta."
+    )
+
+    blocks = pdf_loader.split_text_into_question_answer_blocks(text)
+
+    assert blocks == [
+        "1. Primeira pergunta? Primeira resposta.",
+        "2. Segunda pergunta? Segunda resposta.",
+    ]
+
+
+def test_split_text_into_semantic_chunks_keeps_question_answer_together() -> None:
+    text = (
+        "1. Primeira pergunta? Primeira resposta completa. "
+        "2. Segunda pergunta? Segunda resposta completa. "
+        "3. Terceira pergunta? Terceira resposta completa."
+    )
+
+    chunks = pdf_loader.split_text_into_semantic_chunks(
+        text,
+        chunk_size=75,
+        chunk_overlap=10,
+    )
+
+    assert chunks == [
+        "1. Primeira pergunta? Primeira resposta completa.",
+        "2. Segunda pergunta? Segunda resposta completa.",
+        "3. Terceira pergunta? Terceira resposta completa.",
+    ]
+
+
 @pytest.mark.parametrize(
     ("text", "chunk_size", "chunk_overlap", "expected_message"),
     [
@@ -97,3 +131,24 @@ def test_load_pdf_chunks_from_project_pdf() -> None:
     assert len(chunks) >= 3
     assert all(chunk.strip() for chunk in chunks[:3])
     assert all(len(chunk) <= config.CHUNK_SIZE for chunk in chunks[:3])
+
+
+def test_project_pdf_chunks_preserve_relevant_faq_answers() -> None:
+    chunks = pdf_loader.load_pdf_chunks(DATA_PDF_PATH)
+
+    assert any(
+        "mestre" in chunk
+        and "doutorado" in chunk
+        and "carta de aceite" in chunk
+        for chunk in chunks
+    )
+    assert any(
+        "21. Qual o valor da bolsa?" in chunk
+        and "R$ 2.200,00" in chunk
+        for chunk in chunks
+    )
+    assert any(
+        "moro no Brasil" in chunk
+        and "visto permanente" in chunk
+        for chunk in chunks
+    )

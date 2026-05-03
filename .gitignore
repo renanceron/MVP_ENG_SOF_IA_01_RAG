@@ -1,0 +1,97 @@
+# ===============================
+# 🐍 PYTHON
+# ===============================
+
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Distribuição / build
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ===============================
+# 🌱 AMBIENTE VIRTUAL
+# ===============================
+
+.venv/
+venv/
+env/
+ENV/
+
+# ===============================
+# 🔐 VARIÁVEIS DE AMBIENTE
+# ===============================
+
+.env
+.env.*
+!.env.example
+
+# ===============================
+# 📦 DEPENDÊNCIAS / CACHE
+# ===============================
+
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+pytest-cache-files-*/
+.tmp_pytest/
+.mypy_cache/
+.cache/
+
+# ===============================
+# 🧪 TESTES / COVERAGE
+# ===============================
+
+.coverage
+coverage.xml
+htmlcov/
+
+# ===============================
+# 🧠 RAG / VECTOR STORE
+# ===============================
+
+vectorstore/
+faiss_index/
+*.faiss
+*.pkl
+
+# ===============================
+# 📂 DADOS LOCAIS (PARCIAL)
+# ===============================
+
+# Mantém PDFs públicos versionados
+# Ignora apenas outros formatos
+data/*.txt
+data/*.csv
+
+# ===============================
+# 🧰 VS CODE
+# ===============================
+
+.vscode/
+
+# ===============================
+# 🖥️ SISTEMA OPERACIONAL
+# ===============================
+
+.DS_Store
+Thumbs.db
+
+# ===============================
+# 📄 LOGS
+# ===============================
+
+*.log
+
+# ===============================
+# 🛠️ OUTROS
+# ===============================
+
+*.tmp
+*.bak
+*.swp

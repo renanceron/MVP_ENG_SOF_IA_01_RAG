@@ -1,10 +1,14 @@
 from dataclasses import dataclass
+from pathlib import Path
+import shutil
 
 import pytest
 from langchain.schema import Document
+from openai import OpenAIError
 
 from app import config
 from app import rag_pipeline
+from app.pdf_loader import load_pdf_chunks
 
 
 QUESTIONS = [
@@ -90,3 +94,80 @@ def test_build_prompt_instructs_model_to_use_only_context() -> None:
     assert "exclusivamente o contexto" in prompt
     assert "Contexto de teste" in prompt
     assert "Pergunta de teste" in prompt
+
+
+def test_build_save_load_and_retrieve_faiss_vector_store_with_real_embeddings() -> None:
+    if not config.OPENAI_API_KEY or config.OPENAI_API_KEY.startswith("insira_"):
+        pytest.skip("OPENAI_API_KEY is required to run the real embeddings integration test")
+
+    chunks = load_pdf_chunks(config.PDF_PATH)
+    index_dir = Path(".tmp_pytest") / "faiss_index"
+
+    if index_dir.exists():
+        shutil.rmtree(index_dir)
+
+    try:
+        try:
+            vector_store = rag_pipeline.build_vector_store(chunks, index_dir=index_dir)
+        except OpenAIError as exc:
+            pytest.skip(f"OpenAI embeddings API unavailable: {exc}")
+
+        assert index_dir.exists()
+        assert (index_dir / "index.faiss").exists()
+        assert (index_dir / "index.pkl").exists()
+
+        try:
+            retrieved_documents = vector_store.similarity_search(
+                "Qual e o valor da bolsa de doutorado do PEC-PG?",
+                k=config.TOP_K,
+            )
+        except OpenAIError as exc:
+            pytest.skip(f"OpenAI embeddings API unavailable: {exc}")
+
+        assert retrieved_documents
+        assert any("R$ 2.200,00" in document.page_content for document in retrieved_documents)
+
+        loaded_vector_store = rag_pipeline.load_vector_store(index_dir=index_dir)
+        assert loaded_vector_store is not None
+
+        try:
+            loaded_documents = loaded_vector_store.similarity_search(
+                "Qual o primeiro passo para fazer a inscricao no PEC-PG?",
+                k=config.TOP_K,
+            )
+        except OpenAIError as exc:
+            pytest.skip(f"OpenAI embeddings API unavailable: {exc}")
+
+        assert loaded_documents
+        assert any("Inscrições online" in document.page_content for document in loaded_documents)
+    finally:
+        if index_dir.exists():
+            shutil.rmtree(index_dir)
+
+
+def test_real_rag_pipeline_answers_expected_questions() -> None:
+    if not config.OPENAI_API_KEY or config.OPENAI_API_KEY.startswith("insira_"):
+        pytest.skip("OPENAI_API_KEY is required to run the real RAG integration test")
+
+    print("\nEtapa 1 - Inicializar RAGPipeline")
+
+    try:
+        pipeline = rag_pipeline.RAGPipeline()
+    except OpenAIError as exc:
+        pytest.skip(f"OpenAI API unavailable while initializing RAGPipeline: {exc}")
+
+    print(f"Etapa 2 - PDF configurado: {config.PDF_PATH}")
+    print(f"Etapa 3 - Modelo LLM: {config.MODEL_NAME}")
+    print(f"Etapa 4 - Modelo de embeddings: {config.EMBEDDING_MODEL}")
+    print(f"Etapa 5 - TOP_K: {config.TOP_K}")
+    print("Etapa 6 - Executar perguntas no pipeline real")
+
+    for index, question in enumerate(QUESTIONS, start=1):
+        print(f"\nPergunta {index}: {question}")
+
+        answer = pipeline.ask(question)
+
+        print(f"Resposta {index}: {answer}")
+
+        assert answer
+        assert answer != "Ocorreu um erro ao executar o pipeline RAG."

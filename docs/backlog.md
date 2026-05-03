@@ -9,8 +9,7 @@
 - [x] Configurar arquivo `.env.example`
 - [x] Validar dependencias em `requirements.txt`
 - [x] Garantir `.env` fora do Git
-- [ ] Configurar ambiente virtual local
-- [ ] Definir `OPENAI_API_KEY` no `.env` local
+- [x] Definir `OPENAI_API_KEY` no `.env` local
 
 ## Etapa 2 - Ingestao de Dados (PDF)
 
@@ -105,5 +104,5 @@
 - [x] Revisar branch `main`
 - [x] Executar testes finais
 - [x] Validar aplicacao localmente por testes de pipeline
-- [ ] Criar tag `v1.0.0`
-- [ ] Publicar release `v1.0.0`
+- [x] Criar tag `v1.0.0`
+- [x] Publicar release `v1.0.0`

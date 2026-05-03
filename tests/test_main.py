@@ -57,3 +57,16 @@ def test_gradio_interface_has_single_input_and_output(monkeypatch) -> None:
     assert len(main.app.output_components) == 1
     assert main.app.input_components[0].label == "Pergunta"
     assert main.app.output_components[0].label == "Resposta"
+
+
+def test_gradio_interface_uses_readable_response_area(monkeypatch) -> None:
+    main = import_main_with_pipeline(monkeypatch, PipelineStub)
+    question_input = main.app.input_components[0]
+    answer_output = main.app.output_components[0]
+
+    assert main.app.title == main.APP_TITLE
+    assert main.app.description == main.APP_DESCRIPTION
+    assert question_input.placeholder == main.QUESTION_PLACEHOLDER
+    assert question_input.lines == 2
+    assert answer_output.lines == main.ANSWER_LINES
+    assert answer_output.max_lines == main.ANSWER_MAX_LINES

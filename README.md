@@ -159,8 +159,45 @@ TEMPERATURE = 0.2
 - O MVP usa apenas um PDF local.
 - O indice FAISS e local e recriavel.
 - A qualidade das respostas depende do contexto recuperado.
-- Nao ha memoria conversacional.
+- O chat nao possui memoria conversacional; cada pergunta e tratada de forma independente.
 - Nao ha autenticacao.
+- Nao ha upload de novos documentos pela interface.
+- Nao ha suporte a multiplos documentos.
+- Nao ha reranking ou busca hibrida.
+
+## Proximas Implementacoes
+
+Possiveis evolucoes, mantendo controle de escopo:
+
+- adicionar memoria conversacional opcional no chat;
+- permitir carregamento de multiplos documentos;
+- adicionar reranking para melhorar a ordenacao dos trechos recuperados;
+- melhorar a exibicao de respostas longas na interface;
+- exibir trechos recuperados como fonte da resposta;
+- permitir recriacao manual do indice FAISS pela interface;
+- documentar melhor o fluxo de atualizacao do PDF local;
+- ampliar testes de interface e validacao visual.
+
+## Uso de IA no Desenvolvimento
+
+Este projeto utilizou IA como apoio direto na cadeia de engenharia de software, com o Codex no terminal auxiliando em:
+
+- definicao e validacao do escopo do MVP;
+- organizacao da arquitetura;
+- implementacao dos modulos Python;
+- criacao e revisao dos testes automatizados;
+- refatoracao do pipeline RAG;
+- validacao de aderencia ao escopo;
+- documentacao tecnica;
+- versionamento com Conventional Commits.
+
+Dados tecnicos do apoio com IA:
+
+- Ferramenta: Codex CLI
+- Versao local validada: `codex-cli 0.128.0`
+- Modelo/agente utilizado na sessao: Codex baseado em GPT-5
+- Uso principal: apoio a engenharia de software, revisao, testes e documentacao
+- Execucao: terminal local do projeto
 
 ## Licenca
 
